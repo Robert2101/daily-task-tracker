@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily DSA & Revision Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>DSA & Revision Calendar</h1>
+        <div class="calendar-header">
+            <button id="prevMonth">&lt;</button>
+            <h2 id="currentMonthYear"></h2>
+            <button id="nextMonth">&gt;</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid">
+            <div class="day-name">Sun</div>
+            <div class="day-name">Mon</div>
+            <div class="day-name">Tue</div>
+            <div class="day-name">Wed</div>
+            <div class="day-name">Thu</div>
+            <div class="day-name">Fri</div>
+            <div class="day-name">Sat</div>
+            </div>
+        <div class="task-display">
+            <h2>Today's Task: <span id="selectedDateDisplay"></span></h2>
+            <p id="taskDescription"></p>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
