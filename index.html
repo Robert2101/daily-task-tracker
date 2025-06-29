@@ -22,10 +22,24 @@
             <div class="day-name">Thu</div>
             <div class="day-name">Fri</div>
             <div class="day-name">Sat</div>
-            </div>
+        </div>
         <div class="task-display">
             <h2>Today's Task: <span id="selectedDateDisplay"></span></h2>
-            <p id="taskDescription"></p>
+            <div id="taskDetailsContent">
+                <p id="taskDescription"></p>
+                <div class="input-group">
+                    <label for="leetcodeQues">LeetCode Q No.:</label>
+                    <input type="text" id="leetcodeQues" placeholder="e.g., 123, 456">
+                </div>
+                <div class="input-group">
+                    <label for="customNotes">Notes:</label>
+                    <textarea id="customNotes" placeholder="Add your custom notes here..."></textarea>
+                </div>
+                <div class="task-actions">
+                    <button id="editTaskBtn" class="action-btn">Edit</button>
+                    <button id="saveTaskBtn" class="action-btn">Save</button>
+                </div>
+            </div>
         </div>
     </div>
     <script src="script.js"></script>

@@ -5,11 +5,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextMonthBtn = document.getElementById('nextMonth');
     const selectedDateDisplay = document.getElementById('selectedDateDisplay');
     const taskDescription = document.getElementById('taskDescription');
+    const leetcodeQuesInput = document.getElementById('leetcodeQues');
+    const customNotesTextarea = document.getElementById('customNotes');
+    const editTaskBtn = document.getElementById('editTaskBtn');
+    const saveTaskBtn = document.getElementById('saveTaskBtn');
 
     let currentDate = new Date(); // Controls which month is displayed
-    
+
     // Set activeDate to today's date, then normalize it to start of day
-    let activeDate = new Date(); 
+    let activeDate = new Date();
     activeDate.setHours(0, 0, 0, 0);
 
     // Function to calculate the start date for DSA Day 1
@@ -22,11 +26,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (activeDate.getTime() < dsaCycleStartDate.getTime()) {
         activeDate = new Date(dsaCycleStartDate); // Create a new Date object to avoid reference issues
     }
-    
+
     // Align calendar display with activeDate's month and year
-    currentDate.setDate(activeDate.getDate()); 
+    currentDate.setDate(activeDate.getDate());
     currentDate.setMonth(activeDate.getMonth());
     currentDate.setFullYear(activeDate.getFullYear());
+
+    // Object to store custom data for dates: { 'YYYY-MM-DD': { leetcode: '123,456', notes: '...' } }
+    let customDateData = JSON.parse(localStorage.getItem('dsaTrackerData')) || {};
+
+    // Helper to enable/disable input fields and buttons
+    function setEditMode(isEditing) {
+        leetcodeQuesInput.disabled = !isEditing;
+        customNotesTextarea.disabled = !isEditing;
+        saveTaskBtn.disabled = !isEditing;
+        editTaskBtn.disabled = isEditing; // Disable edit button when editing
+    }
 
     function renderCalendar() {
         calendarGrid.innerHTML = `
@@ -63,10 +78,10 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let day = 1; day <= daysInMonth; day++) {
             const dayDiv = document.createElement('div');
             dayDiv.classList.add('calendar-day');
-            
+
             // Create a date object for the current day being rendered and normalize
             const currentDayDate = new Date(year, month, day);
-            currentDayDate.setHours(0, 0, 0, 0); 
+            currentDayDate.setHours(0, 0, 0, 0);
             dayDiv.dataset.date = currentDayDate.toISOString().split('T')[0]; // Format YYYY-MM-DD
 
             const dateNumberSpan = document.createElement('span');
@@ -76,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Check if it's the current real-world day (normalized)
             const today = new Date();
-            today.setHours(0, 0, 0, 0); 
+            today.setHours(0, 0, 0, 0);
 
             if (currentDayDate.getTime() === today.getTime()) {
                 dayDiv.classList.add('current-day');
@@ -100,13 +115,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 activeDate = new Date(year, month, day);
                 activeDate.setHours(0, 0, 0, 0);
                 displayTaskForDate(activeDate);
+                setEditMode(false); // Go to view mode when a new date is selected
             });
 
             // Add a task preview to the day cell
             const taskDetails = getTaskDetails(currentDayDate); // Get full details
             const taskPreviewSpan = document.createElement('span');
             taskPreviewSpan.classList.add('task-preview', taskDetails.className);
-            taskPreviewSpan.innerHTML = taskDetails.previewText; // Use innerHTML for line breaks if needed
+
+            let previewText = taskDetails.previewText;
+            const dateKey = currentDayDate.toISOString().split('T')[0];
+            const customData = customDateData[dateKey];
+            if (customData && (customData.leetcode || customData.notes)) {
+                previewText += `<br><small>+Custom</small>`;
+                taskPreviewSpan.classList.add('custom-entry'); // Add specific class for custom entries
+            }
+            taskPreviewSpan.innerHTML = previewText;
             dayDiv.appendChild(taskPreviewSpan);
 
             calendarGrid.appendChild(dayDiv);
@@ -173,14 +197,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const taskDetails = getTaskDetails(date); // Get the full task details
-        
+
         // Apply a specific class for detailed display styling if needed
         let detailClass = '';
         if (taskDetails.className === 'dsa') detailClass = 'task-dsa-detail';
         else if (taskDetails.className === 'revision') detailClass = 'task-revision-detail';
-        else if (taskDetails.className === 'codechef') detailClass = 'task-codechef-detail'; // CodeChef also gets its own detail class
+        else if (taskDetails.className === 'codechef') detailClass = 'task-codechef-detail';
+        else if (taskDetails.className === 'none') detailClass = 'task-none-detail';
+
 
         taskDescription.innerHTML = `<span class="${detailClass}">${taskDetails.fullDescription}</span>`;
+
+        // Get custom data for the active date
+        const dateKey = date.toISOString().split('T')[0];
+        const customData = customDateData[dateKey] || { leetcode: '', notes: '' };
+
+        leetcodeQuesInput.value = customData.leetcode || '';
+        customNotesTextarea.value = customData.notes || '';
+
+        // Disable inputs and show Edit button initially
+        setEditMode(false);
+
+        // Add custom data to the display if present
+        if (customData.leetcode || customData.notes) {
+            let customContent = '<br><br>---<br>';
+            if (customData.leetcode) {
+                customContent += `<strong>LeetCode Question(s):</strong> <a href="https://leetcode.com/problems" target="_blank" class="leetcode-link">${customData.leetcode.split(',').map(q => q.trim()).join(', ')}</a><br>`;
+            }
+            if (customData.notes) {
+                customContent += `<strong>Your Notes:</strong> ${customData.notes.replace(/\n/g, '<br>')}<br>`;
+            }
+            taskDescription.innerHTML += `<span class="custom-display-content">${customContent}</span>`;
+        }
     }
 
     // Event listeners for month navigation
@@ -193,6 +241,30 @@ document.addEventListener('DOMContentLoaded', () => {
         currentDate.setMonth(currentDate.getMonth() + 1);
         renderCalendar();
     });
+
+    // Event listeners for Edit and Save buttons
+    editTaskBtn.addEventListener('click', () => {
+        setEditMode(true);
+    });
+
+    saveTaskBtn.addEventListener('click', () => {
+        const dateKey = activeDate.toISOString().split('T')[0];
+        const leetcode = leetcodeQuesInput.value.trim();
+        const notes = customNotesTextarea.value.trim();
+
+        if (leetcode || notes) {
+            customDateData[dateKey] = { leetcode, notes };
+        } else {
+            // If both are empty, remove the entry for this date
+            delete customDateData[dateKey];
+        }
+
+        localStorage.setItem('dsaTrackerData', JSON.stringify(customDateData));
+        setEditMode(false); // Go back to view mode
+        renderCalendar(); // Re-render calendar to update task previews
+        displayTaskForDate(activeDate); // Update the task display area
+    });
+
 
     // Initial render and display task for the active date
     renderCalendar();
